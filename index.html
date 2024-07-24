@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ImageEdit</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="navbar">
+        <a class="n" href="{{url_for('home')}}">Home |</a>
+        <a class="n" href="{{url_for('about')}}">About |</a>
+        <a class="n" href="#contact">Contact</a>
+    </div>
+    
+    </html>
+    
+    <h1>Upload a File</h1>
+    <form action="{{ url_for('upload') }}" method="post" enctype="multipart/form-data">
+        <input type="file" name="file">
+        <input type="submit" value="Upload">
+    </form>
+    <br>
+    <form id="edit-form" action="/editselection" method="post">
+        <label class="edit" for="item">Choose an editing operation</label>
+        <select id="item" name="item" onchange="updateSliders()">
+            <option value="gray">Convert to GrayScale</option>
+            <option value="bright">Brightness+|-</option>
+            <option value="sat">Saturation+|-</option>
+            <option value="rotate">Rotate</option>
+        </select>
+        <br>
+        <div id="slider-container-bright" style="display: none;">
+            <label class="edit" for="value-bright">Adjust brightness value:</label>
+            <input type="range" id="value-bright" name="value_bright" min="-50" max="50" value="0" oninput="updateValueDisplay('value-bright')">
+            <span id="value-display-bright">0</span>
+        </div>
+        <div id="slider-container-sat" style="display: none;">
+            <label class="edit" for="value-sat">Adjust saturation value:</label>
+            <input type="range" id="value-sat" name="value_sat" min="-0.5" max="2.5" value="1.0" oninput="updateValueDisplay('value-sat')">
+            <span id="value-display-sat">1.0</span>
+        </div>
+        <br>
+        <div id="input-container-rotate" style="display: none;">
+            <label class="edit" for="value-rotate">Rotation degree:</label>
+            <input type="number" id="value-rotate" name="value_rotate" min="-360" max="360" value="0">
+        </div>
+        <br>
+        <input type="submit" value="Apply">
+    </form>
+    <div id="preview-area">
+        <h2>Preview</h2>
+        <img id="preview-image" src="" alt="Image Preview" style="max-width: 100%; display: none;">
+        <br>
+        <a id="download-link" href="" download style="display: none;">
+            <button>Download Processed Image</button>
+        </a>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('edit-form').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const formData = new FormData(this);
+                fetch('/editselection', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.preview_path) {
+                        const previewPath = data.preview_path;
+                        const previewImage = document.getElementById('preview-image');
+                        const downloadLink = document.getElementById('download-link');
+                       
+                        previewImage.src = previewPath + '?' + new Date().getTime(); // Append timestamp 
+                        previewImage.style.display = 'block';
+                        downloadLink.href = previewPath;
+                        downloadLink.style.display = 'inline';
+                    } else {
+                        alert('Error processing image: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+            });
+        });
+
+        function updateSliders() {
+            const selection = document.getElementById('item').value;
+            const sliderContainerBright = document.getElementById('slider-container-bright');
+            const sliderContainerSat = document.getElementById('slider-container-sat');
+            const inputContainerRotate = document.getElementById('input-container-rotate');
+            
+            if (selection === 'bright') {
+                sliderContainerBright.style.display = 'block';
+                sliderContainerSat.style.display = 'none';
+                inputContainerRotate.style.display = 'none';
+            } else if (selection === 'sat') {
+                sliderContainerBright.style.display = 'none';
+                sliderContainerSat.style.display = 'block';
+                inputContainerRotate.style.display = 'none';
+            } else if (selection === 'rotate') {
+                sliderContainerBright.style.display = 'none';
+                sliderContainerSat.style.display = 'none';
+                inputContainerRotate.style.display = 'block';
+            } else {
+                sliderContainerBright.style.display = 'none';
+                sliderContainerSat.style.display = 'none';
+                inputContainerRotate.style.display = 'none';
+            }
+        }
+            
+            
+            
+
+        function updateValueDisplay(id) {
+            const value = document.getElementById(id).value;
+            if (id === 'value-bright') {
+                document.getElementById('value-display-bright').innerText = value;
+            } else if (id === 'value-sat') {
+                document.getElementById('value-display-sat').innerText = value;
+            }
+        }
+    </script>
+</body>
+</html>
